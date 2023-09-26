@@ -447,6 +447,17 @@ def knowledge_query():
             app.logger.warning('SQL: {}'.format(result['error']))
         return flask.jsonify(result)
 
+@knowledge_blueprint.route('metadata/<string:entity>')
+def knowledge_metadata(entity: str):
+    """
+    Find an entity's metadata from the flatmap server's knowledge base.
+    """
+    knowledge_store = KnowledgeStore(settings['FLATMAP_ROOT'], create=False, read_only=False)
+    label = knowledge_store.label(entity)
+    pmr = knowledge_store.pmr(entity)
+    knowledge_store.close()
+    return flask.jsonify({'entity': entity, 'label': label, 'pmr': pmr})
+
 #===============================================================================
 #===============================================================================
 
