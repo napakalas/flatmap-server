@@ -1006,16 +1006,16 @@ queries:
         )
       SELECT p.source_id, p.node_id, ARRAY_AGG(label ORDER BY POSITION(feature_id IN p.node_id)) AS label
       FROM (
-            SELECT DISTINCT pf.source_id, pf.node_id, pf.feature_id
+            SELECT DISTINCT pf.source_id, pf.node_id, pf.feature_id, pf.path_id
             FROM connected_paths AS cp JOIN path_node_features pf
-              ON cp.source_id = pf.source_id AND cp.path_id = pf.path_id AND cp.dest_node_id = pf.node_id
-          JOIN path_node_types pt
-              ON cp.source_id = pt.source_id AND cp.path_id = pt.path_id AND cp.dest_node_id = pt.node_id
-          WHERE pt.type_id IN ('ilxtr:hasAxonSensorySubcellularElementIn', 'ilxtr:hasAxonPresynapticElementIn')
+            ON cp.source_id = pf.source_id AND cp.path_id = pf.path_id AND cp.dest_node_id = pf.node_id
           ) AS p
       JOIN feature_terms ft
         ON p.source_id = ft.source_id AND p.feature_id = ft.term_id
-      GROUP BY p.source_id, p.node_id
+      JOIN path_node_types AS pt
+        ON p.source_id = pt.source_id AND p.node_id = pt.node_id AND p.path_id = pt.path_id
+      WHERE pt.type_id IN ('ilxtr:hasAxonSensorySubcellularElementIn', 'ilxtr:hasAxonPresynapticElementIn')
+      GROUP BY p.source_id, p.node_id, p.path_id;
     parameters:
       - column: pf.feature_id
         label: Anatomical terms for locations
