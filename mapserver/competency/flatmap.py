@@ -117,6 +117,8 @@ def anatomical_map_knowledge(map_uuid: str, competency_db: CompetencyKnowledge) 
             knowledge_terms[path_id]['biologicalSex'] = properties['biologicalSex']
         if 'pathDisconnected' in properties:
             knowledge_terms[path_id]['pathDisconnected'] = properties['pathDisconnected']
+        if 'expert-consults' in properties:
+            knowledge_terms[path_id]['expert-consults'] = properties['expert-consults']
         nerve_terms.update(term for node in knowledge_terms[path_id]['nerves'] for term in [node[0]] + node[1])
 
     # Non-path features with an anatomical term
