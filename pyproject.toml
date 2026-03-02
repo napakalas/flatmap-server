@@ -19,8 +19,8 @@ dependencies = [
     "rich>=13.9.4",
     "pyyaml>=6.0.2",
     "asyncpg>=0.30.0",
-    "flatmapknowledge @ https://github.com/AnatomicMaps/flatmap-knowledge/releases/download/v2.7.0/flatmapknowledge-2.7.0-py3-none-any.whl",
-    "mapknowledge @ https://github.com/AnatomicMaps/map-knowledge/releases/download/v1.5.0/mapknowledge-1.5.0-py3-none-any.whl",
+    "flatmapknowledge",
+    "mapknowledge",
     "mapmaker",
     "granian[pname]>=2.5.5",
     "semver>=3.0.4",
@@ -68,3 +68,5 @@ members = [
 [tool.uv.sources]
 sphinxcontrib-openapi = { git = "https://github.com/sphinx-contrib/openapi" }
 mapmaker = { url = "https://github.com/napakalas/flatmap-maker/releases/download/2026-03-02/mapmaker-1.22.6-py3-none-any.whl" }
+flatmapknowledge = { url = "https://github.com/napakalas/flatmap-knowledge/releases/download/2026-03-02/flatmapknowledge-2.7.0-py3-none-any.whl" }
+mapknowledge = { url = "https://github.com/napakalas/map-knowledge/releases/download/mapknowledge-2026-03-02/mapknowledge-1.5.0-py3-none-any.whl" }
