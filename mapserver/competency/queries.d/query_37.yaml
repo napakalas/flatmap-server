@@ -1,0 +1,88 @@
+queries:
+  - id: 37
+    label: Nodes of a cell precision with the given cell_id
+    sql: >
+      WITH
+        dummy_cells (cell_id) AS (
+          VALUES ('', '', '')
+        ),
+        sckan AS (
+          SELECT source_id, sckan_id FROM knowledge_sources
+          WHERE %CONDITION_1%
+        ),
+        node_mappings AS ( --Get map to sckan node mapping. We dont care about the path_id yet
+          SELECT
+          p1.source_id,
+          p1.source_id AS sckan_id,
+          p1.node_id AS node_id,
+          p2.node_id AS sckan_node_id
+          FROM path_node_types p1 NATURAL JOIN path_node_types p2
+          WHERE (p1.source_id, p1.source_id) IN (SELECT source_id, sckan_id FROM sckan)
+          UNION
+          SELECT
+          p1.source_id,
+          p1.sckan_id,
+          p1.node_id,
+          p1.sckan_node_id
+          FROM path_node_mappings p1 NATURAL JOIN path_node_types pnt
+          WHERE p1.source_id = (SELECT source_id FROM sckan)
+        ),
+        cell_nodes AS (  -- Now connect to nodes, type of nodes, and type
+          SELECT
+            nm.source_id,
+          pnt.path_id AS cell_id,
+          pnt.type_id,
+          nm.node_id,
+          pnf.feature_id,
+          ft.label as feature_label
+          FROM node_mappings nm JOIN path_node_types pnt ON nm.sckan_id = pnt.source_id AND nm.sckan_node_id = pnt.node_id
+          JOIN path_properties pp ON pnt.source_id = pp.source_id AND pnt.path_id = pp.path_id
+          JOIN path_node_features pnf ON nm.source_id = pnf.source_id AND nm.node_id = pnf.node_id
+          JOIN feature_terms ft ON pnf.source_id = ft.source_id AND pnf.feature_id = ft.term_id
+          WHERE pp.type_id = 'NeuronPrecision'
+        )
+
+      SELECT DISTINCT * FROM cell_nodes
+      WHERE (
+        %CONDITION_0%
+        OR EXISTS (SELECT 1 FROM dummy_cells WHERE %CONDITION_0%)
+      )
+    parameters:
+    - id: cell_id
+      column: cell_id
+      label: Cell precision ID
+      type: string
+      multiple: true
+      condition: CONDITION_0
+      default_msg: An empty string is used for the cell_id and this will include all cell_id.
+      default_sql: >
+        select ''
+    - id: source_id
+      column: source_id
+      label: Knowledge source
+      type: string
+      condition: CONDITION_1
+      default_msg: the latest source is used
+      default_sql: >
+        select source_id from knowledge_sources where source_id like 'sckan%'
+        order by source_id desc limit 1
+    order: ''
+    results:
+    - key: source_id
+      label: Knowledge source
+      type: string
+    - key: cell_id
+      label: Cell precision ID
+      type: string
+    - key: type_id
+      label: Phenotype ID
+      type: string
+    - key: node_id
+      label: Node ID
+      type: string
+    - key: feature_id
+      label: Feature value ID
+      type: string
+    - key: feature_label
+      label: Feature value label
+      type: string

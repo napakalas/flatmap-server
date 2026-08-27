@@ -1,0 +1,49 @@
+queries:
+  - id: 31
+    label: Cell precision type list
+    sql: >
+      WITH
+        sckan AS (
+          SELECT source_id, sckan_id FROM knowledge_sources
+          WHERE %CONDITIONS%
+        ),
+        node_mappings AS ( --Get map to sckan node mapping. We dont care about the path_id yet
+          SELECT
+          p1.source_id,
+          p1.source_id AS sckan_id,
+          p1.node_id AS node_id,
+          p2.node_id AS sckan_node_id
+          FROM path_node_types p1 NATURAL JOIN path_node_types p2
+          WHERE (p1.source_id, p1.source_id) IN (SELECT source_id, sckan_id FROM sckan)
+          UNION
+          SELECT
+          p1.source_id,
+          p1.sckan_id,
+          p1.node_id,
+          p1.sckan_node_id
+          FROM path_node_mappings p1 NATURAL JOIN path_node_types pnt
+          WHERE p1.source_id = (SELECT source_id FROM sckan)
+        )
+
+      SELECT DISTINCT
+        ntm.source_id,
+        pn.path_id AS cell_id
+      FROM path_nodes pn JOIN node_mappings ntm ON pn.source_id = ntm.sckan_id AND pn.node_id = ntm.sckan_node_id
+      WHERE pn.path_id IN (SELECT feature_1 FROM feature_relationship WHERE relationship='subclass-of')
+    parameters:
+    - id: source_id
+      column: source_id
+      label: Knowledge source
+      type: string
+      default_msg: the latest source is used
+      default_sql: >
+        select source_id from knowledge_sources where source_id like 'sckan%'
+        order by source_id desc limit 1
+    order: ''
+    results:
+    - key: source_id
+      label: Knowledge source
+      type: string
+    - key: cell_id
+      label: Cell precision ID
+      type: string

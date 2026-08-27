@@ -58,7 +58,7 @@ class CompetencyKnowledge(CompetencyDatabase):
     #=================================================
         path_properties = {}
         for row in self.execute(
-                'select path_id, alert, biological_sex, disconnected from path_properties where source_id=%s', (source_id,)):
+                'select path_id, alert, biological_sex, disconnected, type_id from path_properties where source_id=%s', (source_id,)):
             properties = {}
             if row[1] is not None:
                 properties['alert'] = row[1]
@@ -66,6 +66,8 @@ class CompetencyKnowledge(CompetencyDatabase):
                 properties['biologicalSex'] = row[2]
             if row[3] is not None:
                 properties['pathDisconnected'] = row[3]
+            if row[4] is not None:
+                properties['class'] = row[4]
             path_properties[row[0]] = properties
         return path_properties
 
@@ -74,6 +76,16 @@ class CompetencyKnowledge(CompetencyDatabase):
         return { row[0]: row[1]
             for row in self.execute(
                 'select term_id, description from feature_terms where source_id=%s', (source_id,)) }
+
+    def path_descriptive_phenotypes(self, source_id: str) -> dict:
+    #=============================================================
+        path_descriptive_phenotypes = {}
+        for row in self.execute(
+                'select term_id, type_id, combination_id, feature_id from feature_desc_attributes where source_id=%s', (source_id,)):
+            descriptive_phenotypes = path_descriptive_phenotypes.setdefault(row[0], {})
+            combinations = descriptive_phenotypes.setdefault(row[1], {})
+            combinations.setdefault(row[2], []).append(row[3])
+        return path_descriptive_phenotypes
 
 #===============================================================================
 #===============================================================================

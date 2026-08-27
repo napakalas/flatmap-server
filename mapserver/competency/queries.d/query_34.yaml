@@ -1,0 +1,62 @@
+queries:
+  - id: 34
+    label: Properties of a cell precision with the given cell_id
+    sql: >
+      WITH
+      dummy_cells (term_id) AS (
+        VALUES ('', '', '')
+      ),
+      sckan AS (
+        SELECT source_id, sckan_id FROM knowledge_sources
+        WHERE %CONDITION_1%
+      )
+
+      SELECT ft.source_id,
+        ft.term_id AS cell_id,
+        ft.label AS cell_label,
+        pp.biological_sex,
+        pp.alert
+      FROM path_properties pp
+      JOIN feature_terms ft ON pp.source_id = ft.source_id AND pp.path_id = ft.term_id AND pp.type_id = 'NeuronPrecision'
+      WHERE ft.source_id = (SELECT sckan_id FROM sckan)
+      AND
+      (
+        %CONDITION_0%
+        OR EXISTS (SELECT 1 FROM dummy_cells as ft WHERE %CONDITION_0%)
+      )
+    parameters:
+    - id: cell_id
+      column: ft.term_id
+      label: Cell precision ID
+      type: string
+      multiple: true
+      condition: CONDITION_0
+      default_msg: An empty string is used for the cell_id and this will include all cell_id.
+      default_sql: >
+        select ''
+    - id: source_id
+      column: source_id
+      label: Knowledge source
+      type: string
+      condition: CONDITION_1
+      default_msg: the latest source is used
+      default_sql: >
+        select source_id from knowledge_sources where source_id like 'sckan%'
+        order by source_id desc limit 1
+    order: ''
+    results:
+    - key: source_id
+      label: Knowledge source
+      type: string
+    - key: cell_id
+      label: Cell precision ID
+      type: string
+    - key: cell_label
+      label: Cell precision label
+      type: string
+    - key: biological_sex
+      label: Biological sex
+      type: string
+    - key: alert
+      label: Alert
+      type: string

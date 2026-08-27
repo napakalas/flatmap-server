@@ -44,7 +44,7 @@ COMPETENCY_HOST = os.environ.get('COMPETENCY_HOST', 'localhost:5432')
 
 COMPETENCY_SCHEMA_VERSION_KEY = 'schema_version'
 COMPETENCY_SCHEMA_STATE_KEY = 'competency-schema-version'
-COMPETENCY_SCHEMA_VERSION = '1.1'
+COMPETENCY_SCHEMA_VERSION = '1.2'
 
 if not COMPETENCY_USER:
     print('Competency queries are unavailable because COMPETENCY_USER is not set')

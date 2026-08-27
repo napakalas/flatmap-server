@@ -85,6 +85,7 @@ def anatomical_map_knowledge(map_uuid: str, competency_db: CompetencyKnowledge) 
     path_properties = competency_db.path_properties(map_knowledge_source)
     path_evidence = competency_db.path_evidence(map_knowledge_source)
     path_phenotypes = competency_db.path_phenotypes(map_knowledge_source)
+    path_descriptive_phenotypes = competency_db.path_descriptive_phenotypes(map_knowledge_source)
 
     # Collect all map knowledge
     knowledge_terms = {}
@@ -112,13 +113,10 @@ def anatomical_map_knowledge(map_uuid: str, competency_db: CompetencyKnowledge) 
             'references': path_evidence.get(path_id, []),
             'node-mappings': path_knowledge.get('node-mappings', []),
             'expert-consultants': path_knowledge.get('expert-consultants', []),
+            'descriptive-phenotypes': path_descriptive_phenotypes.get(path_id, {})
         }
-        if 'alert' in properties:
-            knowledge_terms[path_id]['alert'] = properties['alert']
-        if 'biologicalSex' in properties:
-            knowledge_terms[path_id]['biologicalSex'] = properties['biologicalSex']
-        if 'pathDisconnected' in properties:
-            knowledge_terms[path_id]['pathDisconnected'] = properties['pathDisconnected']
+        for prop_name, value in properties.items():
+            knowledge_terms[path_id][prop_name] = value
         nerve_terms.update(term for node in knowledge_terms[path_id]['nerves'] for term in [node[0]] + node[1])
 
     # Non-path features with an anatomical term

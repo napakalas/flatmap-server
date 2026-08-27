@@ -1,0 +1,82 @@
+queries:
+  - id: 35
+    label: Cell precisions and nodes with the given neuron population id
+    sql: >
+      WITH
+        sckan AS (
+          SELECT source_id, sckan_id FROM knowledge_sources
+          WHERE %CONDITION_1%
+        ),
+        node_mappings AS ( --Get map to sckan node mapping. We dont care about the path_id yet
+          SELECT
+          p1.source_id,
+          p1.source_id AS sckan_id,
+          p1.node_id AS node_id,
+          p2.node_id AS sckan_node_id
+          FROM path_node_types p1 NATURAL JOIN path_node_types p2
+          WHERE (p1.source_id, p1.source_id) IN (SELECT source_id, sckan_id FROM sckan)
+          UNION
+          SELECT
+          p1.source_id,
+          p1.sckan_id,
+          p1.node_id,
+          p1.sckan_node_id
+          FROM path_node_mappings p1 NATURAL JOIN path_node_types pnt
+          WHERE p1.source_id = (SELECT source_id FROM sckan)
+        ),
+        paths AS (
+          SELECT
+            pp.source_id,
+            pp.path_id,
+            pn.node_id
+          FROM path_properties pp NATURAL JOIN path_nodes pn
+          WHERE pp.source_id = (SELECT source_id FROM sckan)
+            AND pp.type_id IS DISTINCT FROM 'NeuronPrecision'
+        ),
+        cells AS (
+          SELECT
+            pp.source_id AS sckan_id,
+            pp.path_id,
+            pn.node_id AS sckan_node_id
+          FROM path_properties pp NATURAL JOIN path_nodes pn
+          WHERE pp.source_id = (SELECT sckan_id FROM sckan)
+            AND pp.type_id = 'NeuronPrecision'
+        )
+
+      SELECT DISTINCT p.source_id,
+        p.path_id AS path_id,
+        c.path_id AS cell_id,
+        p.node_id
+      FROM node_mappings nm JOIN paths p ON nm.source_id = p.source_id AND nm.node_id = p.node_id
+      JOIN cells c ON nm.sckan_id = c.sckan_id AND nm.sckan_node_id = c.sckan_node_id
+      WHERE %CONDITION_0%
+    parameters:
+    - id: path_id
+      column: p.path_id
+      label: Path (neuron population) ID
+      type: string
+      multiple: true
+      condition: CONDITION_0
+    - id: source_id
+      column: source_id
+      label: Knowledge source
+      type: string
+      condition: CONDITION_1
+      default_msg: the latest source is used
+      default_sql: >
+        select source_id from knowledge_sources where source_id like 'sckan%'
+        order by source_id desc limit 1
+    order: ''
+    results:
+    - key: source_id
+      label: Knowledge source
+      type: string
+    - key: path_id
+      label: Neuron population ID
+      type: string
+    - key: cell_id
+      label: Cell precision ID
+      type: string
+    - key: node_id
+      label: The common Node ID in path and cell
+      type: string
