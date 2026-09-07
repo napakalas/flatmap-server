@@ -34,9 +34,11 @@ from litestar.config.compression import CompressionConfig
 from litestar.exceptions import HTTPException, NotFoundException
 from litestar.middleware import DefineMiddleware
 from litestar.middleware.compression import CompressionMiddleware
-from litestar.params import FromQuery
 from litestar.response import File
 from litestar.status_codes import HTTP_206_PARTIAL_CONTENT, HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE
+from litestar.openapi.spec import Example
+from litestar.params import Parameter, QueryParameter
+from typing import Annotated
 
 from PIL import Image
 
@@ -48,6 +50,60 @@ from ..utils import get_metadata, json_map_metadata
 
 from .knowledge import query_knowledge
 from .utils import get_flatmap_list
+
+#===============================================================================
+
+example_uuid = None
+example_image = None
+for flatmap in get_flatmap_list():
+    if 'error' not in flatmap and 'uuid' in flatmap:
+        example_uuid = flatmap.get('uuid', flatmap['id'])
+        example_image = f'{flatmap['id']}.svg'
+        break
+
+UuidParameter = Annotated[
+    str,
+    Parameter(
+        description=(
+            'The UUID of a flatmap. Obtain valid UUIDs from the flatmap listing endpoint. '
+            'See [GET /](#get-/) for the list of available flatmaps.'
+        ),
+        examples=[Example(summary='Example UUID', value=example_uuid)],
+    ),
+]
+
+PathIdParameter = Annotated[
+    str,
+    Parameter(
+        description='The ID of a neuron population pathway.',
+        examples=[Example(value='ilxtr:neuron-type-aacar-10a')]
+    ),
+]
+
+ImageParameter = Annotated[
+    str,
+    Parameter(
+        description='The image filename located in the flatmap images directory.',
+        examples=[Example(value=example_image)],
+    ),
+]
+
+ZParameter = Annotated[int, Parameter(description="Tile zoom level.", examples=[Example(value=6)])]
+XParameter = Annotated[int, Parameter(description="Tile X coordinate.", examples=[Example(value=30)])]
+YParameter = Annotated[int, Parameter(description="Tile Y coordinate.", examples=[Example(value=30)])]
+LayerParameter = Annotated[str, Parameter(description='The name of the tile layer.', examples=[Example(value='index')])]
+
+ExtrasParameter = Annotated[
+    str,
+    QueryParameter(
+        description=(
+            'Optional extra entries to include in the returned index, separated by `;`. '
+            'Valid values are `mapAnnotations`, `mapLayers`, `mapMetadata`, `mapPathways`, and `mapStyle`.'
+        ),
+        examples=[Example(summary='Multiple extras', value='mapMetadata;mapStyle')],
+        required=False,
+    ),
+]
 
 #===============================================================================
 
@@ -91,7 +147,7 @@ def blank_tile():
 #===============================================================================
 #===============================================================================
 
-@get('/')
+@get('/', description='Retrieve a list of available flatmaps.')
 async def flatmap_maps(request: Request) -> list:
     """
     Get a list of available flatmaps.
@@ -112,8 +168,15 @@ async def flatmap_maps(request: Request) -> list:
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/')
-async def flatmap_index(request: Request, map_uuid: str, extras: FromQuery[str]='') -> dict|Response:
+@get(
+    'flatmap/{map_uuid:str}/',
+    description=(
+        'Return a flatmap. '
+        'Use the Accept header to request RDF (text/turtle), SVG, or JSON.'
+    )
+)
+async def flatmap_index(request: Request, map_uuid:UuidParameter, extras: ExtrasParameter='') -> dict|Response:
+
     """
     Return a representation of a flatmap.
 
@@ -172,8 +235,11 @@ async def flatmap_index(request: Request, map_uuid: str, extras: FromQuery[str]=
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/log')
-async def flatmap_maker_log(map_uuid: str) -> File:
+@get(
+    'flatmap/{map_uuid:str}/log',
+    description=('Retrieve the flatmap maker log for the specified flatmap.')
+)
+async def flatmap_maker_log(map_uuid: UuidParameter) -> File:
     path = pathlib.Path(settings['FLATMAP_ROOT']) / map_uuid / MAKER_LOG
     if not path.exists():
         path = pathlib.Path(settings['FLATMAP_ROOT']) / map_uuid / OLD_MAKER_LOG
@@ -184,15 +250,21 @@ async def flatmap_maker_log(map_uuid: str) -> File:
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/style')
-async def flatmap_style(map_uuid: str) -> File:
+@get(
+    'flatmap/{map_uuid:str}/style',
+    description='Retrieve the map styling configuration for a flatmap.'
+)
+async def flatmap_style(map_uuid: UuidParameter) -> File:
     path = pathlib.Path(settings['FLATMAP_ROOT']) / map_uuid / 'style.json'
     return File(path=path, media_type=MediaType.JSON)
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/layers')
-async def flatmap_layers(map_uuid: str) -> dict:
+@get(
+    'flatmap/{map_uuid:str}/layers',
+    description='Retrieve layer definitions and metadata for a flatmap.'
+)
+async def flatmap_layers(map_uuid: UuidParameter) -> dict:
     try:
         return json_map_metadata(map_uuid, 'layers')
     except IOError as err:
@@ -200,8 +272,11 @@ async def flatmap_layers(map_uuid: str) -> dict:
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/metadata')
-async def flatmap_metadata(map_uuid: str) -> dict:
+@get(
+    'flatmap/{map_uuid:str}/metadata',
+    description='Retrieve descriptive metadata for the specified flatmap.'
+)
+async def flatmap_metadata(map_uuid: UuidParameter) -> dict:
     try:
         return json_map_metadata(map_uuid, 'metadata')
     except IOError as err:
@@ -210,8 +285,11 @@ async def flatmap_metadata(map_uuid: str) -> dict:
 #===============================================================================
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/pathways')
-async def flatmap_pathways(map_uuid: str) -> dict:
+@get(
+    'flatmap/{map_uuid:str}/pathways',
+    description='Retrieve pathway definitions and metadata for a flatmap.'
+)
+async def flatmap_pathways(map_uuid: UuidParameter) -> dict:
     try:
         return pathways(map_uuid)
     except IOError as err:
@@ -230,8 +308,11 @@ CONNECTIVITY_PROPERTIES = [
     'taxons',
 ]
 
-@get('flatmap/{map_uuid:str}/connectivity/{path_id:path}')
-async def flatmap_connectivity(map_uuid: str, path_id: str) -> dict:
+@get(
+    'flatmap/{map_uuid:str}/connectivity/{path_id:path}',
+    description='Retrieve connectivity and anatomical features for a neuron population pathway.'
+)
+async def flatmap_connectivity(map_uuid: UuidParameter, path_id: PathIdParameter) -> dict:
     path_id = path_id[1:]       # Remove leading '/''
     try:
         path_data = pathways(map_uuid)
@@ -266,8 +347,11 @@ async def flatmap_connectivity(map_uuid: str, path_id: str) -> dict:
 #===============================================================================
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/images/{image:str}')
-async def flatmap_image(map_uuid: str, image:str) -> Response:
+@get(
+    'flatmap/{map_uuid:str}/images/{image:str}',
+    description=('Retrieve an image file associated with the specified flatmap.')
+)
+async def flatmap_image(map_uuid: UuidParameter, image:ImageParameter) -> Response:
     path = pathlib.Path(settings['FLATMAP_ROOT']) / map_uuid / 'images' / image
     if not path.exists():
         raise NotFoundException(detail=f'Missing image: {image}')
@@ -275,8 +359,11 @@ async def flatmap_image(map_uuid: str, image:str) -> Response:
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/mvtiles/{z:int}/{x:int}/{y:int}')
-async def flatmap_vector_tiles(map_uuid: str, z: int, y:int, x: int) -> Response:
+@get(
+    'flatmap/{map_uuid:str}/mvtiles/{z:int}/{x:int}/{y:int}',
+    description='Retrieve a vector map tile for the specified flatmap and tile coordinates.'
+)
+async def flatmap_vector_tiles(map_uuid: UuidParameter, z: ZParameter, y:YParameter, x: XParameter) -> Response:
     try:
         mbtiles = pathlib.Path(settings['FLATMAP_ROOT']) / map_uuid / 'index.mbtiles'
         tile_reader = MBTilesReader(mbtiles)
@@ -312,11 +399,14 @@ def parse_range_header(header_value: str, file_size: int) -> tuple[int, int]:
     except ValueError:
         raise HTTPException(status_code=HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE)
 
-@get([
-    "flatmap/{map_uuid:str}/pmtiles/",
-    "flatmap/{map_uuid:str}/pmtiles/{layer:str}"
-])
-async def flatmap_get_pmtiles(request: Request, map_uuid: str, layer: str='index') -> File:
+@get(
+    [
+        "flatmap/{map_uuid:str}/pmtiles/",
+        "flatmap/{map_uuid:str}/pmtiles/{layer:str}"
+    ],
+    description=('Retrieve a PMTiles archive or layer for a flatmap.')
+)
+async def flatmap_get_pmtiles(request: Request, map_uuid: UuidParameter, layer: LayerParameter='index') -> File:
     filename = f'{layer}.pmtiles'
     filepath = pathlib.Path(settings['FLATMAP_ROOT']) / map_uuid / filename
     if not filepath.exists():
@@ -349,8 +439,11 @@ async def flatmap_get_pmtiles(request: Request, map_uuid: str, layer: str='index
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/tiles/{layer:str}/{z:int}/{x:int}/{y:int}')
-async def flatmap_image_tiles(map_uuid: str, layer: str, z: int, y:int, x: int) -> Response:
+@get(
+    'flatmap/{map_uuid:str}/tiles/{layer:str}/{z:int}/{x:int}/{y:int}',
+    description='Retrieve a raster tile for the specified flatmap layer and tile coordinates.'
+)
+async def flatmap_image_tiles(map_uuid: UuidParameter, layer: LayerParameter, z: ZParameter, y: XParameter, x: YParameter) -> Response:
     try:
         mbtiles = pathlib.Path(settings['FLATMAP_ROOT']) / map_uuid / f'{layer}.mbtiles'
         reader = MBTilesReader(mbtiles)
@@ -363,8 +456,11 @@ async def flatmap_image_tiles(map_uuid: str, layer: str, z: int, y:int, x: int) 
 
 #===============================================================================
 
-@get('flatmap/{map_uuid:str}/annotations')
-async def flatmap_annotation(map_uuid: str) -> dict:
+@get(
+    'flatmap/{map_uuid:str}/annotations',
+    description='Retrieve flatmap annotations by map UUID.'
+)
+async def flatmap_annotation(map_uuid: UuidParameter) -> dict:
     try:
         return json_map_metadata(map_uuid, 'annotations')
     except IOError as err:
@@ -375,8 +471,11 @@ async def flatmap_annotation(map_uuid: str) -> dict:
 """
 Build and cache a hierarchy of anataomical terms used by a flatmap.
 """
-@get('flatmap/{map_uuid:str}/termgraph')
-async def flatmap_termgraph(map_uuid: str) -> dict:
+@get(
+    'flatmap/{map_uuid:str}/termgraph',
+    description='Retrieve the anatomical term hierarchy for structures represented in the specified flatmap.'
+)
+async def flatmap_termgraph(map_uuid: UuidParameter) -> dict:
     try:
         anatomical_hierarchy = AnatomicalHierarchy()
         return anatomical_hierarchy.get_hierarchy(map_uuid)
