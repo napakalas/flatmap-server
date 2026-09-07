@@ -20,11 +20,12 @@
 
 from dataclasses import dataclass
 import os
-from typing import Optional
+from typing import Annotated, Optional
 
 #===============================================================================
 
 from litestar import get, MediaType, post, Request, Router
+from litestar.params import Body
 from litestar.response import File
 
 #===============================================================================
@@ -38,8 +39,14 @@ from ..settings import settings
 
 @dataclass
 class QueryData:
-    sql: str
-    params: Optional[list[str]] = None
+    sql: Annotated[
+        str,
+        Body(description='A read-only SQLite SQL statement to execute against the knowledge store.'),
+    ]
+    params: Annotated[
+        Optional[list[str]],
+        Body(description='Values bound to positional `?` placeholders in `sql`, in order.'),
+    ] = None
 
 @dataclass
 class KnowledgeSourcesResponse:
@@ -47,6 +54,19 @@ class KnowledgeSourcesResponse:
 
 #===============================================================================
 #===============================================================================
+
+KnowledgeQueryBody = Annotated[
+    QueryData,
+    Body(
+        description='SQL statement and positional parameter values for a knowledge-store query.',
+        schema_extra={
+            'example': {
+                'sql': 'SELECT value FROM metadata WHERE name = ?',
+                'params': ['schema_version'],
+            },
+        },
+    ),
+]
 
 def query_knowledge(sql: str, params: list[str]) -> dict:
 #========================================================
@@ -67,8 +87,14 @@ def get_knowledge_sources() -> list[str]:
 #===============================================================================
 #===============================================================================
 
-@post('query/')
-async def knowledge_query(data: QueryData, request: Request) -> dict:
+@post(
+    'query/',
+    description=(
+        'Execute a read-only SQL query against the flatmap knowledge store. '
+        'Use [GET /knowledge/schema](#get-/knowledge/schema) to inspect the available tables and columns.'
+    ),
+)
+async def knowledge_query(data: KnowledgeQueryBody, request: Request) -> dict:
 #====================================================================
     """
     Query the flatmap server's knowledge base.
@@ -85,7 +111,10 @@ async def knowledge_query(data: QueryData, request: Request) -> dict:
         request.logger.warning(f'SQL: {result["error"]}')
     return result
 
-@get('sources')
+@get(
+    'sources',
+    description='List the available SCKAN knowledge-source versions, newest first.',
+)
 async def knowledge_sources() -> KnowledgeSourcesResponse:
 #=========================================================
     """
@@ -98,13 +127,19 @@ async def knowledge_sources() -> KnowledgeSourcesResponse:
     sources = get_knowledge_sources()
     return KnowledgeSourcesResponse(sources)
 
-@get('sparcterms')
+@get(
+    'sparcterms',
+    description='Download the cached SPARC anatomical hierarchy as JSON.',
+)
 async def knowledge_sparcterms() -> File:
 #========================================
     filename = os.path.join(settings['FLATMAP_ROOT'], CACHED_SPARC_HIERARCHY)
     return File(path=filename, media_type=MediaType.JSON)
 
-@get('schema-version')
+@get(
+    'schema-version',
+    description='Return the schema version of the flatmap knowledge store.',
+)
 async def knowledge_schema_version(request: Request) -> dict:
 #============================================================
     """
