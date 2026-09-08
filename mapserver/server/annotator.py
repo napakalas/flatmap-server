@@ -24,13 +24,14 @@ from datetime import datetime, timezone
 import json
 import pathlib
 import sqlite3
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 import uuid
 
 #===============================================================================
 
 from litestar import exceptions, get, post, Request, Response, Router
 from litestar.middleware.session.server_side import ServerSideSessionConfig
+from litestar.params import Body, Parameter
 
 #===============================================================================
 
@@ -103,7 +104,7 @@ TEST_USER = {
 
 SCHEMA_VERSION = '1.1'
 
-ANNOTATION_STORE_SCHEMA = """
+ANNOTATION_STORE_SCHEMA = f"""
     begin;
     create table metadata (name text primary key, value text);
     create table annotations (id text primary key, resource text, itemid text, item text, created text, orcid text, creator text, annotation text, status text);
@@ -371,7 +372,13 @@ def __authenticated_bearer(request: Request) -> bool:
 
 #===============================================================================
 
-@get('authenticate')
+@get(
+    'authenticate',
+    description=(
+        'Authenticate a Pennsieve API key and create an annotator session. '
+        'Pass `key` as a query parameter; use the returned `session` with subsequent annotator requests.'
+    ),
+)
 async def annotator_authenticate(query: dict[str, Any]) -> dict|Response:
     if (key := query.get('key')) is not None:
         user_data = get_pennsieve_user(key)     # type: ignore
@@ -389,7 +396,10 @@ async def annotator_authenticate(query: dict[str, Any]) -> dict|Response:
 
 #===============================================================================
 
-@get('unauthenticate')
+@get(
+    'unauthenticate',
+    description='Delete an annotator session. Pass its `session` value as a query parameter.',
+)
 async def annotator_unauthenticate(query: dict[str, Any], request: Request) -> dict:
     if (session := query.get('session')) is not None:
         __del_session(session)
@@ -398,7 +408,13 @@ async def annotator_unauthenticate(query: dict[str, Any], request: Request) -> d
 
 #===============================================================================
 
-@get('items/')
+@get(
+    'items/',
+    description=(
+        'Retrieve annotated item IDs for a resource. Requires `key` and `session` query parameters '
+        'from [GET /annotator/authenticate](#get-/annotator/authenticate).'
+    ),
+)
 async def annotator_annotated_items(query: dict[str, Any], request: Request) -> dict:
     if __authenticated_session(query, request):
         if (resource_id := __get_json_parameter(query, 'resource')) is not None:
@@ -416,7 +432,13 @@ async def annotator_annotated_items(query: dict[str, Any], request: Request) -> 
 
 #===============================================================================
 
-@get('features/')
+@get(
+    'features/',
+    description=(
+        'Retrieve annotation features for a resource. Requires `key` and `session` query parameters '
+        'from [GET /annotator/authenticate](#get-/annotator/authenticate).'
+    ),
+)
 async def annotator_features(query: dict[str, Any], request: Request) -> dict:
     if __authenticated_session(query, request):
         if (resource_id := __get_json_parameter(query, 'resource')) is not None:
@@ -434,7 +456,13 @@ async def annotator_features(query: dict[str, Any], request: Request) -> dict:
 
 #===============================================================================
 
-@get('annotations/')
+@get(
+    'annotations/',
+    description=(
+        'Retrieve annotations for a resource item. Requires `key` and `session` query parameters '
+        'from [GET /annotator/authenticate](#get-/annotator/authenticate).'
+    ),
+)
 async def annotator_annotations(query: dict[str, Any], request: Request) -> list[dict]:
     if __authenticated_session(query, request):
         if ((resource_id := __get_json_parameter(query, 'resource')) is not None
@@ -448,10 +476,37 @@ async def annotator_annotations(query: dict[str, Any], request: Request) -> list
 
 #===============================================================================
 
-@get(['annotation/', 'annotation/<str:id>'])
-async def annotator_annotation(query: dict[str, Any], request: Request, id: Optional[str]=None) -> dict:
+AnnotationIdParameter = Annotated[
+    str,
+    Parameter(description='The annotation ID to retrieve.'),
+]
+
+@get(
+    'annotation/{id:str}',
+    description=(
+        'Retrieve an annotation by ID. Requires `key` and `session` query parameters '
+        'from [GET /annotator/authenticate](#get-/annotator/authenticate).'
+    ),
+)
+async def annotator_annotation_by_id(id: AnnotationIdParameter, query: dict[str, Any], request: Request) -> dict:
     if __authenticated_session(query, request):
-        annotation_id = __get_json_parameter(query, 'annotation', '') if id is None else id
+        annotation_store = AnnotationStore()
+        annotation = annotation_store.annotation(id)
+        annotation_store.close()
+        return annotation
+    raise exceptions.NotAuthorizedException()
+
+@get(
+    'annotation/',
+    description=(
+        'Retrieve an annotation by ID, passed as the `annotation` query parameter. '
+        'Requires `key` and `session` query parameters '
+        'from [GET /annotator/authenticate](#get-/annotator/authenticate).'
+    ),
+)
+async def annotator_annotation(query: dict[str, Any], request: Request) -> dict:
+    if __authenticated_session(query, request):
+        annotation_id = __get_json_parameter(query, 'annotation', '')
         annotation_store = AnnotationStore()
         annotation = annotation_store.annotation(annotation_id)
         annotation_store.close()
@@ -468,8 +523,19 @@ class AnnotationUpdateRequest:
 
 #===============================================================================
 
-@post('annotation/')
-async def annotator_add_annotation(data: AnnotationUpdateRequest, request: Request) -> dict|Response:
+AnnotationUpdateBody = Annotated[
+    AnnotationUpdateRequest,
+    Body(description='The authenticated session (`key`, `session`) and annotation data to create or update.'),
+]
+
+@post(
+    'annotation/',
+    description=(
+        'Create an annotation. Requires `key` and `session` obtained from '
+        '[GET /annotator/authenticate](#get-/annotator/authenticate), and an authenticated user with update permission.'
+    ),
+)
+async def annotator_add_annotation(data: AnnotationUpdateBody, request: Request) -> dict|Response:
     if __authenticated_session(dataclasses.asdict(data), request):
         if request.session['update']:
             annotation_store = AnnotationStore()
@@ -482,8 +548,14 @@ async def annotator_add_annotation(data: AnnotationUpdateRequest, request: Reque
 
 #===============================================================================
 
-@post('update/')
-async def annotator_update_status(data: AnnotationUpdateRequest, request: Request) -> dict|Response:
+@post(
+    'update/',
+    description=(
+        'Update an annotation status. Requires `key` and `session` obtained from '
+        '[GET /annotator/authenticate](#get-/annotator/authenticate), and an authenticated user with update permission.'
+    ),
+)
+async def annotator_update_status(data: AnnotationUpdateBody, request: Request) -> dict|Response:
     if __authenticated_session(dataclasses.asdict(data), request) or __authenticated_bearer(request):
         if request.session['update']:
             annotation_store = AnnotationStore()
@@ -501,7 +573,10 @@ async def annotator_update_status(data: AnnotationUpdateRequest, request: Reques
 
 #===============================================================================
 
-@get('download/')
+@get(
+    'download/',
+    description='Download all annotations. Requires `Authorization: Bearer TOKEN`.',
+)
 async def annotator_download(request: Request)  -> list[dict]:
     if __authenticated_bearer(request):
         annotation_store = AnnotationStore()
@@ -519,6 +594,7 @@ annotator_router = Router(
         annotator_add_annotation,
         annotator_annotated_items,
         annotator_annotation,
+        annotator_annotation_by_id,
         annotator_annotations,
         annotator_authenticate,
         annotator_download,
@@ -540,7 +616,7 @@ if __name__ == '__main__':
         schema_version: Optional[str] = None
         row = store.db.execute("select name from sqlite_schema where type='table' and name='metadata'").fetchone()
         if row is not None:
-            row = store.db.execute("select value from metadata where name='schema_version").fetchone()
+            row = store.db.execute("select value from metadata where name='schema_version'").fetchone()
             if row is not None:
                 schema_version = row[0]
         if schema_version != SCHEMA_VERSION:
