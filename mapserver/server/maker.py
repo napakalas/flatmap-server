@@ -21,7 +21,7 @@
 from collections.abc import AsyncGenerator
 from datetime import datetime
 import sys
-from typing import Any
+from typing import Annotated, Any
 
 #===============================================================================
 
@@ -31,6 +31,8 @@ from litestar import exceptions, get, post, Request, Response, Router
 from litestar import Litestar, WebSocket, websocket
 from litestar.exceptions import WebSocketDisconnect
 from litestar.handlers import send_websocket_stream
+from litestar.openapi.spec import Example
+from litestar.params import Body, Parameter
 
 #===============================================================================
 
@@ -61,10 +63,50 @@ def terminate():
         map_maker = None
 
 #===============================================================================
+
+MakerRequestBody = Annotated[
+    MakerData,
+    Body(
+        description='The manifest source and options for generating a flatmap.',
+        schema_extra={
+            'example': {
+                'source': 'https://github.com/AnatomicMaps/human-flatmap',
+                'manifest': 'female.manifest.json',
+                'commit': 'main',
+                'force': False,
+            },
+        },
+    ),
+]
+
+ProcessIdParameter = Annotated[
+    int,
+    Parameter(
+        description='The operating-system process ID of the map-generation process.',
+        examples=[Example(value=12345)],
+    ),
+]
+
+MakerIdParameter = Annotated[
+    str,
+    Parameter(
+        description='The server-assigned ID of the map-generation process.',
+        examples=[Example(value='f4a76fe4-8fd1-4f19-839b-6e08ca0cee30')],
+    ),
+]
+
+#===============================================================================
 #===============================================================================
 
-@post('/map')
-async def make_map(data: MakerData) -> MakerResponse|Response:
+@post(
+    '/map',
+    description=(
+        'Start a flatmap generation process. Requires `Authorization: Bearer TOKEN`. '
+        'See the [flatmap-server README](https://github.com/AnatomicMaps/flatmap-server#authentication) '
+        'for authentication details.'
+    ),
+)
+async def make_map(data: MakerRequestBody) -> MakerResponse|Response:
 #=============================================================
     """
     Generate a flatmap.
@@ -88,8 +130,11 @@ async def make_map(data: MakerData) -> MakerResponse|Response:
     result = await map_maker.make(data)
     return MakerResponse(result.status, result.id, result.pid, data.source,  data.commit)
 
-@get('/process-log/{pid:int}')
-async def make_process_log(pid: int) -> dict|Response:
+@get(
+    '/process-log/{pid:int}',
+    description='Retrieve the log for a map-generation process. Requires `Authorization: Bearer TOKEN`.',
+)
+async def make_process_log(pid: ProcessIdParameter) -> dict|Response:
 #=====================================================
     """
     Return the log of a map generation process
@@ -104,8 +149,11 @@ async def make_process_log(pid: int) -> dict|Response:
         'log': log
     }
 
-@get('/log/{id:str}')
-async def make_status_log(id: str) -> MakerLogResponse|Response:
+@get(
+    '/log/{id:str}',
+    description='Retrieve the process status and unseen log records. Requires `Authorization: Bearer TOKEN`.',
+)
+async def make_status_log(id: MakerIdParameter) -> MakerLogResponse|Response:
 #==================================================================================
     """
     Return the status of a map generation process along with unseen log records
@@ -118,8 +166,11 @@ async def make_status_log(id: str) -> MakerLogResponse|Response:
     status = map_maker.status(id)
     return MakerLogResponse(status.status, status.id, status.pid, log_data,  str(datetime.now()))
 
-@get('/status/{id:str}')
-async def make_status(id: str) -> MakerStatus|Response:
+@get(
+    '/status/{id:str}',
+    description='Retrieve the status of a map-generation process. Requires `Authorization: Bearer TOKEN`.',
+)
+async def make_status(id: MakerIdParameter) -> MakerStatus|Response:
 #======================================================
     """
     Get the status of a map generation process.

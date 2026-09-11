@@ -25,6 +25,9 @@ See ../docs/competency.rst
 #===============================================================================
 
 from litestar import get, post, Request, Router
+from litestar.openapi.spec import Example
+from litestar.params import Parameter, Body
+from typing import Annotated
 
 #===============================================================================
 
@@ -35,25 +38,77 @@ from ..competency.definition import QueryRequest, QueryError, QueryResults
 
 #===============================================================================
 
-@get('queries')
+QueryIdParameter = Annotated[
+    str,
+    Parameter(
+        description=(
+            'The ID of the competency query. '
+            'See [GET /competency/queries/](#get-/competency/queries) for the list of available queries.'
+        ),
+        examples=[Example(summary='Example query ID', value='1',)],
+    ),
+]
+
+QueryRequestBody = Annotated[
+    QueryRequest,
+    Body(
+        description='The competency query ID and the parameter values required by that query.',
+        schema_extra={
+            'example': {
+                'query_id': '1',
+                'parameters': [
+                    {
+                        'column': 'feature_id',
+                        'value': 'UBERON:0001759',
+                    },
+                    {
+                        'column': 'source_id',
+                        'value': 'sckan-2026-02-11',
+                    },
+                ],
+            }
+        },
+    ),
+]
+
+#===============================================================================
+
+@get(
+    'queries',
+    description=('Retrieve all available competency query definitions.')
+)
 async def competency_query_definitions(request: Request) -> list[QueryDefinitionSummary]:
 #=======================================================================================
     return await query_definitions(request)
 
-@get('queries/{query_id:str}')
-async def competency_query_definition(query_id: str, request: Request) -> QueryDefinitionDict:
-#=============================================================================================
+@get(
+    'queries/{query_id:str}',
+    description='Retrieve a competency query definition by ID.'
+)
+async def competency_query_definition(query_id: QueryIdParameter, request: Request) -> QueryDefinitionDict:
+#==========================================================================================================
     return await query_definition(query_id, request)
 
-@post('query/')
-async def competency_query(data: QueryRequest, request: Request) -> QueryResults|QueryError:
+@post(
+    'query/',
+    description=(
+        'Execute a competency query. '
+        'The required parameters depend on the selected query_id. '
+        'See [GET /competency/queries/{query_id}](#get-/competency/queries/-query_id-) for parameter definitions. '
+        'See [GET /competency/queries/](#get-/competency/queries) for the list of available queries.'
+    )
+)
+async def competency_query(data: QueryRequestBody, request: Request) -> QueryResults|QueryError:
 #===========================================================================================
     result = await query(data, request)
     if 'error' in result:
         request.logger.warning(result["error"])
     return result
 
-@get('schema-version')
+@get(
+    'schema-version',
+    description=('Retrieve version details for the competency schema.')
+)
 async def competency_schema_version(request: Request) -> dict[str, str|None]:
 #==========================================================================
     return await get_competency_schema_info(request.app)

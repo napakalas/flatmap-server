@@ -104,7 +104,10 @@ def terminate(app: Litestar):
 
 #===============================================================================
 
-@get('/version')
+@get(
+    '/version',
+    description='Returns the flatmap server version.'
+)
 async def version() -> list[dict]:
     versions = [
         {'id': 'server', 'version': __version__},
