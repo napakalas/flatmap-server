@@ -950,8 +950,8 @@ provides-extras = ["tools"]
 
 [[package]]
 name = "mapmaker"
-version = "2.0.0"
-source = { url = "https://github.com/AnatomicMaps/flatmap-maker/releases/download/v2.0.0/mapmaker-2.0.0-py3-none-any.whl" }
+version = "2.0.1"
+source = { url = "https://github.com/AnatomicMaps/flatmap-maker/releases/download/v2.0.1/mapmaker-2.0.1-py3-none-any.whl" }
 dependencies = [
     { name = "beziers" },
     { name = "colormath" },
@@ -996,7 +996,7 @@ dependencies = [
     { name = "xmltodict" },
 ]
 wheels = [
-    { url = "https://github.com/AnatomicMaps/flatmap-maker/releases/download/v2.0.0/mapmaker-2.0.0-py3-none-any.whl", hash = "sha256:ece912b19dfc812a9319ccb76e781395f8a683d7ff7f870e4ac288f2116be9d7" },
+    { url = "https://github.com/AnatomicMaps/flatmap-maker/releases/download/v2.0.1/mapmaker-2.0.1-py3-none-any.whl", hash = "sha256:0f3a9e53478272b77a4144152c2b639fb9cba5de7eaa2e6c0fe1bb563f0bc390" },
 ]
 
 [package.metadata]
@@ -1046,7 +1046,7 @@ requires-dist = [
 
 [[package]]
 name = "mapserver"
-version = "1.13.0"
+version = "1.13.1"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -1093,7 +1093,7 @@ requires-dist = [
     { name = "landez", specifier = ">=2.5.0" },
     { name = "litestar", extras = ["brotli"], specifier = ">=2.15.2" },
     { name = "mapknowledge", url = "https://github.com/AnatomicMaps/map-knowledge/releases/download/v1.6.3/mapknowledge-1.6.3-py3-none-any.whl" },
-    { name = "mapmaker", url = "https://github.com/AnatomicMaps/flatmap-maker/releases/download/v2.0.0/mapmaker-2.0.0-py3-none-any.whl" },
+    { name = "mapmaker", url = "https://github.com/AnatomicMaps/flatmap-maker/releases/download/v2.0.1/mapmaker-2.0.1-py3-none-any.whl" },
     { name = "numpy", specifier = ">=1.26.4" },
     { name = "pillow", specifier = ">=11.2.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
