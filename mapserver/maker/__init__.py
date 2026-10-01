@@ -213,13 +213,16 @@ class MakerProcess(multiprocessing.Process):
                 log_lines = fp.read().split('\n')
                 for log_line in log_lines[self.__next_log_line:]:
                     self.__next_log_line += 1
-                    if log_line:
-                        message = json.loads(log_line)
-                        if message.get('level') == 'critical':
-                            if message.get('msg', '').startswith('Mapmaker succeeded'):
-                                self.__result = { key: value for key in MAKER_RESULT_KEYS
-                                                    if (value := message.get(key)) is not None }
-                        self.__msg_queue.put(message)
+                    if log_line.strip():
+                        try:
+                            message = json.loads(log_line)
+                            if message.get('level') == 'critical':
+                                if message.get('msg', '').startswith('Mapmaker succeeded'):
+                                    self.__result = { key: value for key in MAKER_RESULT_KEYS
+                                                        if (value := message.get(key)) is not None }
+                            self.__msg_queue.put(message)
+                        except json.decoder.JSONDecodeError:
+                            pass
 
     def read_log_receiver(self):
     #===========================
@@ -233,7 +236,7 @@ class MakerProcess(multiprocessing.Process):
                     self.__result = { key: value for key in MAKER_RESULT_KEYS
                                         if (value := message.get(key)) is not None }
             self.__msg_queue.put(message)
-        except TimeoutError:
+        except (json.decoder.JSONDecodeError, TimeoutError):
             return
 
     def start_maker(self):
