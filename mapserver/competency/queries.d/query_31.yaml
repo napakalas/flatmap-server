@@ -1,6 +1,6 @@
 queries:
   - id: 31
-    label: Cell precision type list
+    label: Cell precision type or class list
     sql: >
       WITH
         sckan AS (

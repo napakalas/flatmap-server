@@ -5,10 +5,11 @@ queries:
       SELECT DISTINCT pnf.source_id as source_id, pnt.path_id as path_id, pnt.node_id
       AS axon_terminal
       FROM path_node_types pnt JOIN path_node_features pnf
-      ON pnf.path_id = pnt.path_id AND pnf.node_id = pnt.node_id AND pnf.source_id =
-      pnt.source_id
+      ON pnf.path_id = pnt.path_id AND pnf.node_id = pnt.node_id AND pnf.source_id = pnt.source_id
+      JOIN path_properties pp ON pnf.source_id=pp.source_id AND pnf.path_id = pp.path_id
       WHERE pnt.type_id IN ('ilxtr:hasAxonSensorySubcellularElementIn', 'ilxtr:hasAxonPresynapticElementIn')
       AND %CONDITIONS%
+      AND (pp.type_id!='NeuronPrecision' OR pp.type_id IS NULL)
     parameters:
     - id: feature_id
       column: pnf.feature_id

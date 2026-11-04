@@ -1,6 +1,6 @@
 queries:
   - id: 36
-    label: Neuron population with the given cell precisions id
+    label: Cell precisions and nodes with the given neuron population id
     sql: >
       WITH
         sckan AS (
@@ -51,9 +51,9 @@ queries:
       JOIN cells c ON nm.sckan_id = c.sckan_id AND nm.sckan_node_id = c.sckan_node_id
       WHERE %CONDITION_0%
     parameters:
-    - id: cell_id
-      column: c.path_id
-      label: Cell precision ID
+    - id: path_id
+      column: p.path_id
+      label: Path (neuron population) ID
       type: string
       multiple: true
       condition: CONDITION_0
@@ -71,11 +71,11 @@ queries:
     - key: source_id
       label: Knowledge source
       type: string
-    - key: cell_id
-      label: Cell precision ID
-      type: string
     - key: path_id
       label: Neuron population ID
+      type: string
+    - key: cell_id
+      label: Cell precision ID
       type: string
     - key: node_id
       label: The common Node ID in path and cell
