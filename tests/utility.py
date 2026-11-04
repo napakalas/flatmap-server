@@ -2,6 +2,8 @@ import requests
 from tools.portal_maps import ENDPOINTS, latest_maps
 
 END_POINT = ENDPOINTS['development']
+END_POINT = 'http://127.0.0.1:8000'
+
 CQ_END_POINT = f'{END_POINT}/competency/query'
 HEADERS = {'Content-Type': 'application/json'}
 
@@ -21,6 +23,7 @@ FEMALE_UUID = maps.get(FEMALE_KEY, {}).get('uuid', FEMALE_FALLBACK_UUID)
 RAT_UUID = maps.get(RAT_KEY, {}).get('uuid', RAT_FALLBACK_UUID)
 
 SCKAN_VERSION = 'sckan-2026-02-11'
+# SCKAN_VERSION = 'sckan-2026-06-23'
 
 def cq_request(query: dict):
     response = requests.post(CQ_END_POINT, json=query, headers=HEADERS)
@@ -31,7 +34,8 @@ def assert_valid_query_response(
     expected_num_keys=None,
     expected_num_values=None,
     expected_column_values=None,
-    expected_rows=None
+    expected_rows=None,
+    minimums_rows=None
 ):
     assert response.status_code in (200, 201), f'Unexpected status code: {response.status_code}'
     json_response = response.json()
@@ -67,3 +71,6 @@ def assert_valid_query_response(
             assert any(
                 all(item in value for item in row) for value in values
             ), f"Missing expected row: {row}"
+
+    if minimums_rows:
+        assert minimums_rows <= len(values), f"From {SCKAN_VERSION}, {minimums_rows} <= {len(values)} there should be cell precisions"
