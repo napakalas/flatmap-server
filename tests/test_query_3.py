@@ -4,7 +4,7 @@ from utility import cq_request, assert_valid_query_response, SCKAN_VERSION, RAT_
 base_query = {
     'query_id': '3',
     'parameters': [
-        {'column': 'evidence_id', 'value': 'http://www.ncbi.nlm.nih.gov/pubmed/27783854'}
+        {'column': 'evidence_id', 'value': 'PMID:27783854'}
     ]
 }
 

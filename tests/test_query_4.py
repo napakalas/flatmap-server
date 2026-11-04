@@ -11,11 +11,14 @@ base_query = {
 
 def test_sckan():
     query = {**base_query, 'parameters': base_query['parameters'] + [{'column': 'source_id', 'value': SCKAN_VERSION}]}
-    expected_evidence_ids = ['http://www.ncbi.nlm.nih.gov/pubmed/27783854']
+    expected_evidence_ids = [
+        'PMID:27783854',
+        'https://doi.org/10.5281/zenodo.14042941'
+    ]
     response = cq_request(query)
     assert_valid_query_response(
         response,
         expected_num_keys=2,
-        expected_num_values=1,
+        expected_num_values=2,
         expected_column_values={'evidence_id': expected_evidence_ids}
     )

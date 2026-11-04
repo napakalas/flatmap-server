@@ -52,15 +52,16 @@ def test_sckan():
         ['ilxtr:neuron-type-bromo-2', 'ilxtr:neuron-type-bromo-6']
     ]
     expected_connected_paths_1 = [
+        ['ilxtr:neuron-type-aacar-4', 'ilxtr:neuron-type-aacar-10a'],
+        ['ilxtr:neuron-type-aacar-4', 'ilxtr:neuron-type-aacar-10v'],
         ['ilxtr:neuron-type-aacar-4', 'ilxtr:neuron-type-aacar-7a'],
         ['ilxtr:neuron-type-aacar-4', 'ilxtr:neuron-type-aacar-7v'],
-        ['ilxtr:neuron-type-aacar-4', 'ilxtr:neuron-type-aacar-10a']
     ]
     response = cq_request(query)
     assert_valid_query_response(
         response,
         expected_num_keys=8,
-        expected_num_values=9,
+        expected_num_values=12,
         expected_column_values={
             'soma': expected_shared_somas,
             'connected_paths_0': expected_connected_paths_0,

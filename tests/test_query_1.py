@@ -11,7 +11,7 @@ base_query = {
 def test_sckan():
     query = {**base_query, 'parameters': base_query['parameters'] + [{'column': 'source_id', 'value': SCKAN_VERSION}]}
     response = cq_request(query)
-    expected_path_ids = ['ilxtr:sparc-nlp/mmset4/3', 'ilxtr:sparc-nlp/mmset4/3a']
+    expected_path_ids = ['mmset4:3', 'mmset4:3a']
     assert_valid_query_response(
         response,
         expected_num_keys=2,
@@ -23,7 +23,7 @@ def test_human_male_map():
     # Note: 'ilxtr:sparc-nlp/mmset4/3a' having MPG as soma in rat, not expected in human
     query = {**base_query, 'parameters': base_query['parameters'] + [{'column': 'source_id', 'value': MALE_UUID}]}
     response = cq_request(query)
-    expected_path_ids = ['ilxtr:sparc-nlp/mmset4/3']
+    expected_path_ids = ['mmset4:3']
     assert_valid_query_response(
         response,
         expected_num_keys=2,

@@ -11,8 +11,8 @@ base_query = {
 def test_sckan():
     query = {**base_query, 'parameters': base_query['parameters'] + [{'column': 'source_id', 'value': SCKAN_VERSION}]}
     expected_rows = [
-        [SCKAN_VERSION, '["ILX:0770759", ["UBERON:0001158"]]'],
-        [SCKAN_VERSION, '["UBERON:0000483", ["UBERON:0001258"]]'],
+        [SCKAN_VERSION, '["UBERON:0001158", []]'],
+        [SCKAN_VERSION, '["UBERON:0001135", ["UBERON:0001258"]]'],
         [SCKAN_VERSION, '["UBERON:0004243", []]']
     ]
     response = cq_request(query)

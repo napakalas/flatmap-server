@@ -23,7 +23,7 @@ base_query = {
 
 def test_sckan():
     query = {**base_query, 'parameters': base_query['parameters'] + [{'column': 'source_id', 'value': SCKAN_VERSION}]}
-    expected_shared_somas = ['["UBERON:0006457", []]']
+    expected_shared_somas = ['["ILX:0738371", []]']
     expected_connected_paths_0 = [
         ['ilxtr:neuron-type-bolew-unbranched-2', 'ilxtr:neuron-type-bolew-unbranched-16'],
         ['ilxtr:neuron-type-bolew-unbranched-2', 'ilxtr:neuron-type-bolew-unbranched-17']

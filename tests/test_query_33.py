@@ -2,7 +2,7 @@ import pytest
 from utility import cq_request, assert_valid_query_response, SCKAN_VERSION
 
 base_query = {
-    'query_id': '34',
+    'query_id': '33',
     'parameters': []
 }
 
@@ -20,8 +20,8 @@ expected_cell_ids_1029 = {
         'cell_id': [
             'ilx:npo/uris/neurons/1029',
         ],
-        'type_id': [
-            'ilxtr:hasNucleicAcidExpressionPhenotype'
+        'cell_label': [
+            'DRG hPEP.KIT (Yu2024)'
         ],
     }
 

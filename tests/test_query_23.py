@@ -27,7 +27,7 @@ def test_human_male_map():
     expected_rows = [
         [MALE_UUID, 'ilxtr:neuron-type-keast-1'],
         [MALE_UUID, 'ilxtr:neuron-type-keast-10'],
-        [MALE_UUID, 'ilxtr:sparc-nlp/kidney/137']
+        [MALE_UUID, 'kidney:137']
     ]
     response = cq_request(query)
     assert_valid_query_response(

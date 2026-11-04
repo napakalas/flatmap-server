@@ -14,5 +14,5 @@ def test_sckan():
     assert_valid_query_response(
         response,
         expected_num_keys=2,
-        expected_num_values=22
+        expected_num_values=18
     )

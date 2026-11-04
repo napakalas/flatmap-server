@@ -4,21 +4,20 @@ from utility import cq_request, assert_valid_query_response, SCKAN_VERSION
 base_query = {
     'query_id': '37',
     'parameters': [
-        {'column': 'cell_id', 'value': 'ilx:npo/uris/neurons/1063'}
+        {'column': 'cell_id', 'value': 'ilx:npo/uris/neurons/982'}
     ]
 }
 
 SCKAN_BOUNDARY = 'sckan-2026-02-11'
 
 expected_path_ids = {
-        'cell_id': [
-            'ilx:npo/uris/neurons/1063',
+        'path_id': [
+            'ilx:composer/uris/set/pain1/7',
+            'ilx:composer/uris/set/pain1/8'
         ],
-        'feature_id': [
-            'ILX:0110092',
-            'UBERON:0006118',
-            'UBERON:0002097',
-            'UBERON:0000044',
+        'node_id': [
+            '["UBERON:0000044", []]',
+            '["UBERON:0001675", []]'
         ]
     }
 

@@ -20,8 +20,8 @@ expected_cell_ids_1029 = {
         'cell_id': [
             'ilx:npo/uris/neurons/1029',
         ],
-        'cell_label': [
-            'DRG hPEP.KIT (Yu2024)'
+        'type_id': [
+            'ilxtr:hasNucleicAcidExpressionPhenotype'
         ],
     }
 

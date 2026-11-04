@@ -4,19 +4,21 @@ from utility import cq_request, assert_valid_query_response, SCKAN_VERSION
 base_query = {
     'query_id': '35',
     'parameters': [
-        {'column': 'path_id', 'value': 'ilx:composer/uris/set/pain1/1'}
+        {'column': 'cell_id', 'value': 'ilx:npo/uris/neurons/1063'}
     ]
 }
 
 SCKAN_BOUNDARY = 'sckan-2026-02-11'
 
-expected_cell_ids = {
+expected_path_ids = {
         'cell_id': [
-            'ilx:npo/uris/neurons/921',
-            'ilx:npo/uris/neurons/926'
+            'ilx:npo/uris/neurons/1063',
         ],
-        'node_id': [
-            '["UBERON:0000044", []]'
+        'feature_id': [
+            'ILX:0110092',
+            'UBERON:0006118',
+            'UBERON:0002097',
+            'UBERON:0000044',
         ]
     }
 
@@ -29,5 +31,5 @@ def test_sckan():
     assert_valid_query_response(
         response,
         minimums_rows = 0 if SCKAN_BOUNDARY <= SCKAN_VERSION else 100,
-        expected_column_values = {} if SCKAN_BOUNDARY <= SCKAN_VERSION else expected_cell_ids,
+        expected_column_values = {} if SCKAN_BOUNDARY <= SCKAN_VERSION else expected_path_ids,
     )

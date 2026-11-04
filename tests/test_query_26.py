@@ -12,7 +12,16 @@ base_query_expected_path_ids = [
     'ilxtr:neuron-type-sstom-1',
     'ilxtr:neuron-type-sstom-2',
     'ilxtr:neuron-type-sstom-3',
-    'ilxtr:neuron-type-sstom-5'
+    'ilxtr:neuron-type-sstom-5',
+    'ilxtr:neuron-type-sstom-6',
+    'ilxtr:neuron-type-sstom-7',
+    'ilxtr:neuron-type-sstom-8',
+    'ilxtr:neuron-type-sstom-9',
+    'ilxtr:neuron-type-sstom-10',
+    'ilxtr:neuron-type-sstom-11',
+    'ilxtr:neuron-type-sstom-12',
+    'ilxtr:neuron-type-sstom-13',
+    'ilxtr:neuron-type-sstom-14',
 ]
 
 backward_query = {
@@ -23,8 +32,12 @@ backward_query = {
 }
 
 backward_query_expected_path_ids = [
-    'ilxtr:neuron-type-sstom-6',
+    'ilxtr:neuron-type-sstom-1',
+    'ilxtr:neuron-type-sstom-2',
+    'ilxtr:neuron-type-sstom-3',
+    'ilxtr:neuron-type-sstom-4',
     'ilxtr:neuron-type-sstom-5',
+    'ilxtr:neuron-type-sstom-6',
     'ilxtr:neuron-type-sstom-8'
 ]
 
@@ -34,7 +47,7 @@ def test_sckan():
     assert_valid_query_response(
         response,
         expected_num_keys=4,
-        expected_num_values=4,
+        expected_num_values=16,
         expected_column_values={'dest_path_id': base_query_expected_path_ids}
     )
 
@@ -43,7 +56,7 @@ def test_sckan():
     assert_valid_query_response(
         response,
         expected_num_keys=4,
-        expected_num_values=3,
+        expected_num_values=8,
         expected_column_values={'dest_path_id': backward_query_expected_path_ids}
     )
 
@@ -53,7 +66,7 @@ def test_human_male_map():
     assert_valid_query_response(
         response,
         expected_num_keys=4,
-        expected_num_values=4,
+        expected_num_values=16,
         expected_column_values={'dest_path_id': base_query_expected_path_ids}
     )
 
@@ -72,7 +85,7 @@ def test_human_female_map():
     assert_valid_query_response(
         response,
         expected_num_keys=4,
-        expected_num_values=4,
+        expected_num_values=16,
         expected_column_values={'dest_path_id': base_query_expected_path_ids}
     )
 
@@ -91,7 +104,7 @@ def test_human_rat_map():
     assert_valid_query_response(
         response,
         expected_num_keys=4,
-        expected_num_values=4,
+        expected_num_values=16,
         expected_column_values={'dest_path_id': base_query_expected_path_ids}
     )
 

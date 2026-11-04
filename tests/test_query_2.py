@@ -11,7 +11,7 @@ base_query = {
 def test_sckan():
     query = {**base_query, 'parameters': base_query['parameters'] + [{'column': 'source_id', 'value': SCKAN_VERSION}]}
     response = cq_request(query)
-    expected_path_ids = ['ilxtr:sparc-nlp/mmset4/3', 'ilxtr:sparc-nlp/mmset4/3a']
+    expected_path_ids = ['mmset4:3', 'mmset4:3a']
     expected_axon_terminals = ['["UBERON:0004713", []]']
     assert_valid_query_response(
         response,
