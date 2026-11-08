@@ -77,6 +77,12 @@ class CompetencyKnowledge(CompetencyDatabase):
             for row in self.execute(
                 'select term_id, description from feature_terms where source_id=%s', (source_id,)) }
 
+    def term_labels(self, source_id: str) -> dict[str, str]:
+    #=======================================================
+        return { row[0]: row[1]
+            for row in self.execute(
+                'select term_id, label from feature_terms where source_id=%s', (source_id,)) }
+
     def path_descriptive_phenotypes(self, source_id: str) -> dict:
     #=============================================================
         path_combinations = {}

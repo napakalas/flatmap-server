@@ -135,6 +135,24 @@ def anatomical_map_knowledge(map_uuid: str, competency_db: CompetencyKnowledge) 
             if properties.get('type') == 'nerve' or feature_id in nerve_terms:
                 knowledge_terms[feature_id]['type'] = NERVE_TYPE
 
+    # Descriptive phenotype values (e.g. PATO:0000366) come from SCKAN and must also be
+    # map terms, as ``feature_desc_attributes.feature_id`` references the map's ``feature_terms``
+    descriptive_terms = { term
+                            for path_id in pathways if path_id in knowledge_terms
+                                for combinations in knowledge_terms[path_id]['descriptive-phenotypes'].values()
+                                    for combination in combinations
+                                        for term in combination }
+    if descriptive_terms - knowledge_terms.keys():
+        labels = competency_db.term_labels(map_knowledge_source)
+        for term in descriptive_terms - knowledge_terms.keys():
+            label = labels.get(term) or term
+            knowledge_terms[term] = {
+                'id': term,
+                'source': map_uuid,
+                'label': label,
+                'long-label': descriptions.get(term) or label,
+            }
+
     map_name = metadata.get('name', metadata.get('describes', metadata['id']))
     return KnowledgeList(KnowledgeSource(map_uuid, sckan_release, map_name), list(knowledge_terms.values()))
 
