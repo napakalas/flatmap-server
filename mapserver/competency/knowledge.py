@@ -79,13 +79,14 @@ class CompetencyKnowledge(CompetencyDatabase):
 
     def path_descriptive_phenotypes(self, source_id: str) -> dict:
     #=============================================================
-        path_descriptive_phenotypes = {}
+        path_combinations = {}
         for row in self.execute(
                 'select term_id, type_id, combination_id, feature_id from feature_desc_attributes where source_id=%s', (source_id,)):
-            descriptive_phenotypes = path_descriptive_phenotypes.setdefault(row[0], {})
-            combinations = descriptive_phenotypes.setdefault(row[1], {})
+            combinations = path_combinations.setdefault(row[0], {}).setdefault(row[1], {})
             combinations.setdefault(row[2], []).append(row[3])
-        return path_descriptive_phenotypes
+        # {path_id: {type_id: [[feature_id, ...], ...]}} -- same shape as SCKAN's descriptive-phenotypes
+        return {path_id: {type_id: list(combos.values()) for type_id, combos in types.items()}
+                for path_id, types in path_combinations.items()}
 
 #===============================================================================
 #===============================================================================
