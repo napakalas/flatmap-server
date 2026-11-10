@@ -113,6 +113,7 @@ def anatomical_map_knowledge(map_uuid: str, competency_db: CompetencyKnowledge) 
             'references': path_evidence.get(path_id, []),
             'node-mappings': path_knowledge.get('node-mappings', []),
             'expert-consultants': path_knowledge.get('expert-consultants', []),
+            'curator-note': path_knowledge.get('curator-note', []),
             'descriptive-phenotypes': path_descriptive_phenotypes.get(path_id, {})
         }
         for prop_name, value in properties.items():
