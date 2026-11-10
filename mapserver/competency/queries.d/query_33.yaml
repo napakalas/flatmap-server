@@ -15,9 +15,45 @@ queries:
         ft.term_id AS cell_id,
         ft.label AS cell_label,
         pp.biological_sex,
-        pp.alert
+        pp.alert,
+        COALESCE(tx.taxon_ids, '{}') AS taxon_id,
+        COALESCE(sub.cell_ids, '{}') AS subclass_id,
+        COALESCE(sup.cell_ids, '{}') AS superclass_id,
+        COALESCE(mt.cell_ids, '{}') AS maps_to_id,
+        COALESCE(cn.notes, '{}') AS curator_note,
+        COALESCE(dc.dataset_ids, '{}') AS dataset_id
       FROM path_properties pp
       JOIN feature_terms ft ON pp.source_id = ft.source_id AND pp.path_id = ft.term_id AND pp.type_id = 'NeuronPrecision'
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT pt.taxon_id ORDER BY pt.taxon_id) AS taxon_ids
+        FROM path_taxons pt
+        WHERE pt.source_id = ft.source_id AND pt.path_id = ft.term_id
+      ) tx ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT fr.feature_0 ORDER BY fr.feature_0) AS cell_ids
+        FROM feature_relationship fr
+        WHERE fr.source_id = ft.source_id AND fr.feature_1 = ft.term_id AND fr.relationship = 'subclass-of'
+      ) sub ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT fr.feature_1 ORDER BY fr.feature_1) AS cell_ids
+        FROM feature_relationship fr
+        WHERE fr.source_id = ft.source_id AND fr.feature_0 = ft.term_id AND fr.relationship = 'subclass-of'
+      ) sup ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT fr.feature_1 ORDER BY fr.feature_1) AS cell_ids
+        FROM feature_relationship fr
+        WHERE fr.source_id = ft.source_id AND fr.feature_0 = ft.term_id AND fr.relationship = 'maps-to'
+      ) mt ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT fc.note ORDER BY fc.note) AS notes
+        FROM feature_curator_notes fc
+        WHERE fc.source_id = ft.source_id AND fc.term_id = ft.term_id
+      ) cn ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT fd.evidence_id ORDER BY fd.evidence_id) AS dataset_ids
+        FROM feature_data_citations fd
+        WHERE fd.source_id = ft.source_id AND fd.term_id = ft.term_id
+      ) dc ON true
       WHERE ft.source_id = (SELECT sckan_id FROM sckan)
       AND
       (
@@ -60,3 +96,21 @@ queries:
     - key: alert
       label: Alert
       type: string
+    - key: taxon_id
+      label: Species taxon terms (list)
+      type: array
+    - key: subclass_id
+      label: Direct subclasses of the cell precision (list)
+      type: array
+    - key: superclass_id
+      label: Direct superclasses of the cell precision (list)
+      type: array
+    - key: maps_to_id
+      label: Cell precisions this cell precision maps to (list)
+      type: array
+    - key: curator_note
+      label: Curator notes (list)
+      type: array
+    - key: dataset_id
+      label: Data citations, i.e. datasets supporting the cell precision (list)
+      type: array
