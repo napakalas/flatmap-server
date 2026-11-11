@@ -14,6 +14,7 @@ queries:
       SELECT ft.source_id,
         ft.term_id AS cell_id,
         ft.label AS cell_label,
+        ft.description AS long_label,
         pp.biological_sex,
         pp.alert,
         COALESCE(tx.taxon_ids, '{}') AS taxon_id,
@@ -21,7 +22,9 @@ queries:
         COALESCE(sup.cell_ids, '{}') AS superclass_id,
         COALESCE(mt.cell_ids, '{}') AS maps_to_id,
         COALESCE(cn.notes, '{}') AS curator_note,
-        COALESCE(dc.dataset_ids, '{}') AS dataset_id
+        COALESCE(dc.dataset_ids, '{}') AS dataset_id,
+        COALESCE(ph.phenotypes, '{}') AS phenotype,
+        COALESCE(ev.evidence_ids, '{}') AS reference
       FROM path_properties pp
       JOIN feature_terms ft ON pp.source_id = ft.source_id AND pp.path_id = ft.term_id AND pp.type_id = 'NeuronPrecision'
       LEFT JOIN LATERAL (
@@ -54,6 +57,16 @@ queries:
         FROM feature_data_citations fd
         WHERE fd.source_id = ft.source_id AND fd.term_id = ft.term_id
       ) dc ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT pph.phenotype ORDER BY pph.phenotype) AS phenotypes
+        FROM path_phenotypes pph
+        WHERE pph.source_id = ft.source_id AND pph.path_id = ft.term_id
+      ) ph ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(DISTINCT fe.evidence_id ORDER BY fe.evidence_id) AS evidence_ids
+        FROM feature_evidence fe
+        WHERE fe.source_id = ft.source_id AND fe.term_id = ft.term_id
+      ) ev ON true
       WHERE ft.source_id = (SELECT sckan_id FROM sckan)
       AND
       (
@@ -90,6 +103,9 @@ queries:
     - key: cell_label
       label: Cell precision label
       type: string
+    - key: long_label
+      label: Cell precision long label
+      type: string
     - key: biological_sex
       label: Biological sex
       type: string
@@ -113,4 +129,10 @@ queries:
       type: array
     - key: dataset_id
       label: Data citations, i.e. datasets supporting the cell precision (list)
+      type: array
+    - key: phenotype
+      label: Phenotypes of the cell precision (list)
+      type: array
+    - key: reference
+      label: References, i.e. evidence supporting the cell precision (list)
       type: array
